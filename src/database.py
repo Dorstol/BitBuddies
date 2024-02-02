@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from src.accounts.models import User
 
-DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+DATABASE_URL = "sqlite+aiosqlite:///./test.sqlite3"
 
 engine = create_async_engine(DATABASE_URL)
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
