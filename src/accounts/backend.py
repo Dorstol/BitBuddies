@@ -8,6 +8,9 @@ class CustomAuthenticationBackend(AuthenticationBackend):
         self, strategy: Strategy[models.UP, models.ID], user: models.UP
     ) -> Response:
         if not user.is_verified:
-            return Response(status_code=status.HTTP_403_FORBIDDEN)
+            return Response(
+                content="Please verify your account via mail.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
         token = await strategy.write_token(user)
         return await self.transport.get_login_response(token)
