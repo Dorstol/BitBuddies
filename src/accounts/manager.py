@@ -2,10 +2,17 @@ from typing import Optional
 
 from fastapi import Depends, Request
 from fastapi_mail import MessageSchema, MessageType, FastMail
-from fastapi_users import BaseUserManager, IntegerIDMixin, models, exceptions
+from fastapi_users import (
+    BaseUserManager,
+    IntegerIDMixin,
+    models,
+    exceptions,
+    FastAPIUsers,
+)
 from fastapi_users.jwt import generate_jwt
 from starlette.responses import JSONResponse
 
+from src.accounts.config import auth_backend
 from src.accounts.models import User
 from src.config import conf
 from src.database import get_user_db
@@ -73,3 +80,9 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
 async def get_user_manager(user_db=Depends(get_user_db)):
     yield UserManager(user_db)
+
+
+fastapi_users = FastAPIUsers[User, int](
+    get_user_manager,
+    [auth_backend],
+)

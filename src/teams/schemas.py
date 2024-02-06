@@ -12,8 +12,11 @@ class TeamBase(BaseModel):
     members: list[UserRead]
 
 
-class TeamCreate(TeamBase):
-    pass
+class TeamCreate(BaseModel):
+    title: str
+    project_name: str
+    description: str
+    status: StatusChoices
 
 
 class TeamUpdate(TeamCreate):
