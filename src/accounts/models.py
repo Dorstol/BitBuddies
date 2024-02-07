@@ -23,6 +23,8 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     email: Mapped[str] = mapped_column(
         String(length=320), unique=True, index=True, nullable=False
     )
+    # first_name
+    # last_name
     hashed_password: Mapped[str] = mapped_column(String(length=1024), nullable=False)
     role: Mapped[Optional[Role]]
     contact: Mapped[str] = mapped_column(Text(), nullable=True)

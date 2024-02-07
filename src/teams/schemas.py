@@ -13,6 +13,7 @@ class TeamBase(BaseModel):
 
 
 class TeamCreate(BaseModel):
+    owner_id: int
     title: str
     project_name: str
     description: str

@@ -1,8 +1,9 @@
+from fastapi import HTTPException, status
 from sqlalchemy import select, Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.teams.models import Team
+from src.teams.models import Team, UserTeam
 from src.teams.schemas import TeamCreate, TeamUpdatePartial
 
 
@@ -21,8 +22,15 @@ async def get_team(session: AsyncSession, team_id: int) -> Team | None:
 
 
 async def create_team(session: AsyncSession, team_in: TeamCreate) -> Team:
-    team = Team(**team_in.model_dump())
+    team = Team(
+        title=team_in.title,
+        project_name=team_in.project_name,
+        description=team_in.description,
+    )
     session.add(team)
+    await session.flush()
+    user_team = UserTeam(user_id=team_in.owner_id, team_id=team.id)
+    session.add(user_team)
     await session.commit()
     return await get_team(session=session, team_id=team.id)
 
@@ -41,3 +49,18 @@ async def update_team(
 async def delete_team(session: AsyncSession, team: Team) -> None:
     await session.delete(team)
     await session.commit()
+
+
+async def join_team(
+    team: Team,
+    user_id: int,
+    session: AsyncSession,
+):
+    if len(team.members) == team.MAX_TEAM_MEMBERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Max team members!"
+        )
+    user_team = UserTeam(user_id=user_id, team_id=team.id)
+    session.add(user_team)
+    await session.commit()
+    return user_team

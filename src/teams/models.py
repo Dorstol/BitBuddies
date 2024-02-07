@@ -18,6 +18,8 @@ class StatusChoices(str, Enum):
 class Team(Base):
     __tablename__ = "teams"
 
+    MAX_TEAM_MEMBERS = 8
+
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(
         String(length=256),

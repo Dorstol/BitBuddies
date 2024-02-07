@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.accounts.crud import get_user_by_id
-from src.accounts.models import User
 from src.database import get_async_session
 from src.teams import crud
 from src.teams.dependencies import team_by_id
@@ -11,12 +9,18 @@ from src.teams.schemas import Team, TeamCreate, TeamUpdatePartial
 router = APIRouter()
 
 
-@router.get("/", response_model=list[Team])
+@router.get(
+    "/",
+    response_model=list[Team],
+)
 async def get_teams(session: AsyncSession = Depends(get_async_session)):
     return await crud.get_teams(session=session)
 
 
-@router.get("/{team_id}/", response_model=Team)
+@router.get(
+    "/{team_id}/",
+    response_model=Team,
+)
 async def get_team(team: Team = Depends(team_by_id)):
     return team
 
@@ -49,9 +53,24 @@ async def update_team_partial(
     )
 
 
-@router.delete("/{team_id}/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{team_id}/",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def delete_team(
     team: Team = Depends(team_by_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> None:
     await crud.delete_team(session=session, team=team)
+
+
+@router.post(
+    "/join/{team_id}/",
+    status_code=status.HTTP_200_OK,
+)
+async def join_team(
+    user_id: int,
+    team: int = Depends(team_by_id),
+    session: AsyncSession = Depends(get_async_session),
+):
+    return await crud.join_team(team=team, user_id=user_id, session=session)
