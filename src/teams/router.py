@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.accounts.dependencies import get_user_by_id
+from src.accounts.schemas import User
 from src.database import get_async_session
 from src.teams import crud
 from src.teams.dependencies import team_by_id
@@ -70,7 +72,23 @@ async def delete_team(
 )
 async def join_team(
     user_id: int,
-    team: int = Depends(team_by_id),
+    team: Team = Depends(team_by_id),
     session: AsyncSession = Depends(get_async_session),
 ):
     return await crud.join_team(team=team, user_id=user_id, session=session)
+
+
+@router.delete(
+    "/leave/{team_id}/",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def leave_team(
+    user: User = Depends(get_user_by_id),
+    team: Team = Depends(team_by_id),
+    session: AsyncSession = Depends(get_async_session),
+) -> None:
+    await crud.leave_team(
+        user=user,
+        team=team,
+        session=session,
+    )

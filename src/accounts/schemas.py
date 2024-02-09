@@ -4,6 +4,7 @@ from fastapi_users import models
 from fastapi_users import schemas
 from fastapi_users.schemas import CreateUpdateDictModel
 from pydantic import EmailStr
+
 from src.accounts.models import Role
 
 
@@ -27,3 +28,7 @@ class UserUpdate(CreateUpdateDictModel):
     email: Optional[EmailStr] = None
     role: Optional[Role] = None
     contact: Optional[str] = None
+
+
+class User(UserRead):
+    pass

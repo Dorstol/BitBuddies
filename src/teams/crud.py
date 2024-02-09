@@ -3,6 +3,7 @@ from sqlalchemy import select, Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from src.accounts.models import User
 from src.teams.models import Team, UserTeam
 from src.teams.schemas import TeamCreate, TeamUpdatePartial
 
@@ -64,3 +65,13 @@ async def join_team(
     session.add(user_team)
     await session.commit()
     return user_team
+
+
+async def leave_team(
+    team: Team,
+    user: User,
+    session: AsyncSession,
+) -> None:
+    if user and team:
+        team.members.remove(user)
+    await session.commit()
