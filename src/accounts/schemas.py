@@ -5,17 +5,14 @@ from fastapi_users import schemas
 from fastapi_users.schemas import CreateUpdateDictModel
 from pydantic import EmailStr
 
-from src.accounts.models import Role
+from src.accounts.models import Position
 
 
 class UserRead(schemas.BaseUser[int]):
     id: models.ID
     email: EmailStr
-    role: Optional[Role]
+    position: Optional[Position]
     contact: Optional[str]
-    is_active: bool = True
-    is_superuser: bool = False
-    is_verified: bool = False
 
 
 class UserCreate(CreateUpdateDictModel):
@@ -26,7 +23,7 @@ class UserCreate(CreateUpdateDictModel):
 class UserUpdate(CreateUpdateDictModel):
     password: Optional[str] = None
     email: Optional[EmailStr] = None
-    role: Optional[Role] = None
+    position: Optional[Position] = None
     contact: Optional[str] = None
 
 

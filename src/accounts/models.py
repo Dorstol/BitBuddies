@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.models import Base
 
 
-class Role(str, Enum):
+class Position(str, Enum):
     FRONTEND = "Frontend"
     BACKEND = "Backend"
     DESIGNER = "Designer"
@@ -26,7 +26,7 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     # first_name
     # last_name
     hashed_password: Mapped[str] = mapped_column(String(length=1024), nullable=False)
-    role: Mapped[Optional[Role]]
+    position: Mapped[Optional[Position]]
     contact: Mapped[str] = mapped_column(Text(), nullable=True)
     # photo
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
