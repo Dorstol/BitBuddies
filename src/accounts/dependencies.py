@@ -1,9 +1,10 @@
-from fastapi import Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from src.accounts.models import User
-from src.accounts.crud import get_user
 from typing import Optional
 
+from fastapi import Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.accounts.crud import get_user
+from src.accounts.models import User
 from src.database import get_async_session
 
 

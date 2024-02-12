@@ -22,7 +22,11 @@ async def get_team(session: AsyncSession, team_id: int) -> Team | None:
     return team
 
 
-async def create_team(session: AsyncSession, team_in: TeamCreate) -> Team:
+async def create_team(
+    team_in: TeamCreate,
+    user_id: int,
+    session: AsyncSession,
+) -> Team:
     team = Team(
         title=team_in.title,
         project_name=team_in.project_name,
@@ -30,7 +34,7 @@ async def create_team(session: AsyncSession, team_in: TeamCreate) -> Team:
     )
     session.add(team)
     await session.flush()
-    user_team = UserTeam(user_id=team_in.owner_id, team_id=team.id)
+    user_team = UserTeam(user_id=user_id, team_id=team.id)
     session.add(user_team)
     await session.commit()
     return await get_team(session=session, team_id=team.id)
@@ -39,6 +43,7 @@ async def create_team(session: AsyncSession, team_in: TeamCreate) -> Team:
 async def update_team(
     session: AsyncSession,
     team: Team,
+    user_id: int,
     team_update: TeamUpdatePartial,
 ):
     for name, value in team_update.model_dump(exclude_unset=True).items():
@@ -47,21 +52,25 @@ async def update_team(
     return team
 
 
-async def delete_team(session: AsyncSession, team: Team) -> None:
+async def delete_team(
+    session: AsyncSession,
+    team: Team,
+    user: User,
+) -> None:
     await session.delete(team)
     await session.commit()
 
 
 async def join_team(
     team: Team,
-    user_id: int,
+    user: User,
     session: AsyncSession,
 ):
     if len(team.members) == team.MAX_TEAM_MEMBERS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Max team members!"
         )
-    user_team = UserTeam(user_id=user_id, team_id=team.id)
+    user_team = UserTeam(user_id=user.id, team_id=team.id)
     session.add(user_team)
     await session.commit()
     return user_team

@@ -13,11 +13,11 @@ class TeamBase(BaseModel):
 
 
 class TeamCreate(BaseModel):
-    owner_id: int
     title: str
     project_name: str
     description: str
     status: StatusChoices
+    user_id: int
 
 
 class TeamUpdate(TeamCreate):

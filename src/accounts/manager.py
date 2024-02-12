@@ -55,8 +55,14 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         )
 
         fm = FastMail(conf)
-        await fm.send_message(message)
-        return JSONResponse(status_code=200, content={"message": "email has been sent"})
+        return await fm.send_message(message)
+
+    async def request_verify(
+        self,
+        user: models.UP,
+        request: Optional[Request] = None,
+    ):
+        return await self.on_after_register(user=user)
 
     async def on_after_forgot_password(
         self,
