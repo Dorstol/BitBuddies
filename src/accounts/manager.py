@@ -1,18 +1,18 @@
 from typing import Optional
 
-from fastapi import Depends, Request
+from fastapi import Depends, Request, HTTPException
 from fastapi_mail import MessageSchema, MessageType, FastMail
 from fastapi_users import (
     BaseUserManager,
     IntegerIDMixin,
     models,
     exceptions,
-    FastAPIUsers,
 )
 from fastapi_users.jwt import generate_jwt
 from starlette.responses import JSONResponse
 
 from src.accounts.config import auth_backend
+from src.accounts.fastapi_users.fastapi_users import CustomFastAPIUsers
 from src.accounts.models import User
 from src.config import conf
 from src.database import get_user_db
@@ -62,6 +62,10 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         user: models.UP,
         request: Optional[Request] = None,
     ):
+        if not user:
+            raise HTTPException(status_code=404, detail="USER_DOES_NOT_EXIST")
+        if user.is_verified:
+            raise HTTPException(status_code=400, detail="USER_ALREADY_VERIFIED")
         return await self.on_after_register(user=user)
 
     async def on_after_forgot_password(
@@ -88,7 +92,7 @@ async def get_user_manager(user_db=Depends(get_user_db)):
     yield UserManager(user_db)
 
 
-fastapi_users = FastAPIUsers[User, int](
+fastapi_users = CustomFastAPIUsers[User, int](
     get_user_manager,
     [auth_backend],
 )

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,8 +7,9 @@ from src.database import get_async_session
 
 
 async def get_user_by_id(
-    user_id: int, session: AsyncSession = Depends(get_async_session)
-) -> Optional[User]:
+    user_id: int,
+    session: AsyncSession = Depends(get_async_session),
+) -> User | None:
     """
     Dependency function to retrieve a user by their ID.
 
@@ -25,6 +24,6 @@ async def get_user_by_id(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            detail="USER_NOT_EXIST",
         )
     return user

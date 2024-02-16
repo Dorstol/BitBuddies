@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from src.accounts.config import auth_backend
 from src.accounts.manager import fastapi_users
-from src.accounts.schemas import UserRead, UserCreate, UserUpdate
+from src.accounts.schemas import User, UserCreate, UserUpdate, UserRead
 
 router = APIRouter()
 
@@ -19,7 +19,7 @@ router.include_router(
 )
 
 router.include_router(
-    fastapi_users.get_users_router(UserRead, UserUpdate),
+    fastapi_users.get_users_router(User, UserUpdate),
     prefix="/users",
     tags=["users"],
 )
