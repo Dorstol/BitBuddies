@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from src.config import BASE_DIR
 
 from src.accounts.router import router as accounts_router
 from src.teams.router import router as teams_router
@@ -24,3 +26,6 @@ app.include_router(
     prefix="/teams",
     tags=["teams"],
 )
+
+
+app.mount("/static", StaticFiles(directory=f"{BASE_DIR}/static"), name="static")

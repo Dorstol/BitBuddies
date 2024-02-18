@@ -1,8 +1,8 @@
-"""fix user position
+"""init
 
-Revision ID: b9a091dd7a4f
+Revision ID: 04e4874eb02b
 Revises: 
-Create Date: 2024-02-18 18:45:35.223334
+Create Date: 2024-02-18 19:54:56.192708
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b9a091dd7a4f'
+revision: str = '04e4874eb02b'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -32,9 +32,12 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(length=320), nullable=False),
+    sa.Column('first_name', sa.String(length=128), server_default='', nullable=False),
+    sa.Column('last_name', sa.String(length=128), server_default='', nullable=False),
     sa.Column('hashed_password', sa.String(length=1024), nullable=False),
     sa.Column('position', sa.Enum('DEFAULT', 'FRONTEND', 'BACKEND', 'DESIGNER', 'PM', 'QA', name='position'), server_default='', nullable=False),
-    sa.Column('contact', sa.Text(), nullable=True),
+    sa.Column('contact', sa.Text(), server_default='', nullable=False),
+    sa.Column('photo', sa.String(length=256), server_default='', nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_superuser', sa.Boolean(), nullable=False),
     sa.Column('is_verified', sa.Boolean(), nullable=False),

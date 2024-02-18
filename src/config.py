@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi_mail import ConnectionConfig
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 conf = ConnectionConfig(
     MAIL_USERNAME="olehsofronov@gmail.com",

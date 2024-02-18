@@ -11,9 +11,12 @@ class UserRead(BaseUser[int]):
     """Base User model."""
 
     id: models.ID
+    first_name: str
+    last_name: str
     email: EmailStr
-    position: Optional[Position]
-    contact: Optional[str]
+    position: Position
+    contact: str
+    photo: str
     is_active: bool = Field(exclude=True)
     is_superuser: bool = Field(exclude=True)
     is_verified: bool = Field(exclude=True)
@@ -25,6 +28,8 @@ class UserCreate(CreateUpdateDictModel):
 
 
 class UserUpdate(CreateUpdateDictModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     password: Optional[str] = None
     email: Optional[EmailStr] = None
     position: Optional[Position] = None
