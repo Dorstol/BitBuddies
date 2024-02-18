@@ -1,8 +1,8 @@
-"""rename user field role
+"""fix user position
 
-Revision ID: 9314c5b75017
+Revision ID: b9a091dd7a4f
 Revises: 
-Create Date: 2024-02-10 20:40:01.414927
+Create Date: 2024-02-18 18:45:35.223334
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '9314c5b75017'
+revision: str = 'b9a091dd7a4f'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -33,7 +33,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(length=320), nullable=False),
     sa.Column('hashed_password', sa.String(length=1024), nullable=False),
-    sa.Column('position', sa.Enum('FRONTEND', 'BACKEND', 'DESIGNER', 'PM', 'QA', name='position'), nullable=True),
+    sa.Column('position', sa.Enum('DEFAULT', 'FRONTEND', 'BACKEND', 'DESIGNER', 'PM', 'QA', name='position'), server_default='', nullable=False),
     sa.Column('contact', sa.Text(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_superuser', sa.Boolean(), nullable=False),

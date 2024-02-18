@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from sqlalchemy import String, Boolean, Text
@@ -9,6 +8,7 @@ from src.models import Base
 
 
 class Position(str, Enum):
+    DEFAULT = ""
     FRONTEND = "Frontend"
     BACKEND = "Backend"
     DESIGNER = "Designer"
@@ -26,8 +26,15 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     # first_name
     # last_name
     hashed_password: Mapped[str] = mapped_column(String(length=1024), nullable=False)
-    position: Mapped[Optional[Position]]
-    contact: Mapped[str] = mapped_column(Text(), nullable=True)
+    position: Mapped[Position] = mapped_column(
+        server_default=Position.DEFAULT,
+        default=Position.DEFAULT,
+    )
+    contact: Mapped[str] = mapped_column(
+        Text(),
+        server_default="",
+        default="",
+    )
     # photo
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

@@ -65,7 +65,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         if not user:
             raise HTTPException(status_code=404, detail="USER_DOES_NOT_EXIST")
         if user.is_verified:
-            raise HTTPException(status_code=400, detail="USER_ALREADY_VERIFIED")
+            raise HTTPException(status_code=400, detail="VERIFY_USER_ALREADY_VERIFIED")
         return await self.on_after_register(user=user)
 
     async def on_after_forgot_password(
