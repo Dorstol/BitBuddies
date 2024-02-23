@@ -10,7 +10,7 @@ from src.accounts.models import Position
 class UserRead(BaseUser[int]):
     """Base User model."""
 
-    id: models.ID
+    id: models.ID = Field(exclude=True)
     first_name: str
     last_name: str
     email: EmailStr
@@ -31,7 +31,6 @@ class UserUpdate(CreateUpdateDictModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     password: Optional[str] = None
-    email: Optional[EmailStr] = None
     position: Optional[Position] = None
     contact: Optional[str] = None
 

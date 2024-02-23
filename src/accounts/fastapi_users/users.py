@@ -1,26 +1,29 @@
-import os
 import uuid
 from typing import Type
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.config import BASE_DIR
 from PIL import Image
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
     Request,
-    Response,
     status,
     File,
     UploadFile,
 )
+from fastapi.params import Query
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_users import exceptions, models, schemas
 from fastapi_users.authentication import Authenticator
 from fastapi_users.manager import BaseUserManager, UserManagerDependency
 from fastapi_users.router.common import ErrorCode, ErrorModel
+from sqlalchemy import select, or_
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.accounts.models import User, Position
+from src.accounts.schemas import UserRead
+from src.config import BASE_DIR
 from src.database import get_async_session
 
 
@@ -161,116 +164,149 @@ def get_users_router(
         await session.commit()
 
     @router.get(
-        "/{id}",
-        response_model=user_schema,
-        dependencies=[Depends(get_current_superuser)],
-        name="users:user",
-        responses={
-            status.HTTP_401_UNAUTHORIZED: {
-                "description": "Missing token or inactive user.",
-            },
-            status.HTTP_403_FORBIDDEN: {
-                "description": "Not a superuser.",
-            },
-            status.HTTP_404_NOT_FOUND: {
-                "description": "The user does not exist.",
-            },
-        },
+        "/all",
+        name="get_users",
+        response_model=Page[UserRead],
+        dependencies=[Depends(get_current_active_user)],
     )
-    async def get_user(user=Depends(get_user_or_404)):
-        return schemas.model_validate(user_schema, user)
+    async def get_users(
+        full_name: str = Query(None, description="Filter users by full name"),
+        email: str = Query(None, description="Filter users by email"),
+        position: Position = Query(None, description="Filter users by position"),
+        session: AsyncSession = Depends(get_async_session),
+    ) -> Page[UserRead]:
+        query = select(User)
+        if full_name:
+            parts = full_name.split()
+            if len(parts) == 2:
+                first_name, last_name = parts
+                if first_name:
+                    query = query.filter(User.first_name.contains(first_name))
+                if last_name:
+                    query = query.filter(User.last_name.contains(last_name))
+            elif len(parts) == 1:
+                name = parts[0]
+                query = query.filter(
+                    or_(User.first_name.contains(name), User.last_name.contains(name))
+                )
+        if email:
+            query = query.filter(User.email.contains(email))
+        if position:
+            query = query.filter(User.position.contains(position))
 
-    @router.patch(
-        "/{id}",
-        response_model=user_schema,
-        dependencies=[Depends(get_current_superuser)],
-        name="users:patch_user",
-        responses={
-            status.HTTP_401_UNAUTHORIZED: {
-                "description": "Missing token or inactive user.",
-            },
-            status.HTTP_403_FORBIDDEN: {
-                "description": "Not a superuser.",
-            },
-            status.HTTP_404_NOT_FOUND: {
-                "description": "The user does not exist.",
-            },
-            status.HTTP_400_BAD_REQUEST: {
-                "model": ErrorModel,
-                "content": {
-                    "application/json": {
-                        "examples": {
-                            ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS: {
-                                "summary": "A user with this email already exists.",
-                                "value": {
-                                    "detail": ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS
-                                },
-                            },
-                            ErrorCode.UPDATE_USER_INVALID_PASSWORD: {
-                                "summary": "Password validation failed.",
-                                "value": {
-                                    "detail": {
-                                        "code": ErrorCode.UPDATE_USER_INVALID_PASSWORD,
-                                        "reason": "Password should be"
-                                        "at least 3 characters",
-                                    }
-                                },
-                            },
-                        }
-                    }
-                },
-            },
-        },
-    )
-    async def update_user(
-        user_update: user_update_schema,  # type: ignore
-        request: Request,
-        user=Depends(get_user_or_404),
-        user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager),
-    ):
-        try:
-            user = await user_manager.update(
-                user_update, user, safe=False, request=request
-            )
-            return schemas.model_validate(user_schema, user)
-        except exceptions.InvalidPasswordException as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "code": ErrorCode.UPDATE_USER_INVALID_PASSWORD,
-                    "reason": e.reason,
-                },
-            )
-        except exceptions.UserAlreadyExists:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail=ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS,
-            )
+        return await paginate(session, query)
 
-    @router.delete(
-        "/{id}",
-        status_code=status.HTTP_204_NO_CONTENT,
-        response_class=Response,
-        dependencies=[Depends(get_current_superuser)],
-        name="users:delete_user",
-        responses={
-            status.HTTP_401_UNAUTHORIZED: {
-                "description": "Missing token or inactive user.",
-            },
-            status.HTTP_403_FORBIDDEN: {
-                "description": "Not a superuser.",
-            },
-            status.HTTP_404_NOT_FOUND: {
-                "description": "The user does not exist.",
-            },
-        },
-    )
-    async def delete_user(
-        request: Request,
-        user=Depends(get_user_or_404),
-        user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager),
-    ):
-        await user_manager.delete(user, request=request)
-        return None
+    # @router.get(
+    #     "/{id}",
+    #     response_model=user_schema,
+    #     dependencies=[Depends(get_current_superuser)],
+    #     name="users:user",
+    #     responses={
+    #         status.HTTP_401_UNAUTHORIZED: {
+    #             "description": "Missing token or inactive user.",
+    #         },
+    #         status.HTTP_403_FORBIDDEN: {
+    #             "description": "Not a superuser.",
+    #         },
+    #         status.HTTP_404_NOT_FOUND: {
+    #             "description": "The user does not exist.",
+    #         },
+    #     },
+    # )
+    # async def get_user(user=Depends(get_user_or_404)):
+    #     return schemas.model_validate(user_schema, user)
+    #
+    # @router.patch(
+    #     "/{id}",
+    #     response_model=user_schema,
+    #     dependencies=[Depends(get_current_superuser)],
+    #     name="users:patch_user",
+    #     responses={
+    #         status.HTTP_401_UNAUTHORIZED: {
+    #             "description": "Missing token or inactive user.",
+    #         },
+    #         status.HTTP_403_FORBIDDEN: {
+    #             "description": "Not a superuser.",
+    #         },
+    #         status.HTTP_404_NOT_FOUND: {
+    #             "description": "The user does not exist.",
+    #         },
+    #         status.HTTP_400_BAD_REQUEST: {
+    #             "model": ErrorModel,
+    #             "content": {
+    #                 "application/json": {
+    #                     "examples": {
+    #                         ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS: {
+    #                             "summary": "A user with this email already exists.",
+    #                             "value": {
+    #                                 "detail": ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS
+    #                             },
+    #                         },
+    #                         ErrorCode.UPDATE_USER_INVALID_PASSWORD: {
+    #                             "summary": "Password validation failed.",
+    #                             "value": {
+    #                                 "detail": {
+    #                                     "code": ErrorCode.UPDATE_USER_INVALID_PASSWORD,
+    #                                     "reason": "Password should be"
+    #                                     "at least 3 characters",
+    #                                 }
+    #                             },
+    #                         },
+    #                     }
+    #                 }
+    #             },
+    #         },
+    #     },
+    # )
+    # async def update_user(
+    #     user_update: user_update_schema,  # type: ignore
+    #     request: Request,
+    #     user=Depends(get_user_or_404),
+    #     user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager),
+    # ):
+    #     try:
+    #         user = await user_manager.update(
+    #             user_update, user, safe=False, request=request
+    #         )
+    #         return schemas.model_validate(user_schema, user)
+    #     except exceptions.InvalidPasswordException as e:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_400_BAD_REQUEST,
+    #             detail={
+    #                 "code": ErrorCode.UPDATE_USER_INVALID_PASSWORD,
+    #                 "reason": e.reason,
+    #             },
+    #         )
+    #     except exceptions.UserAlreadyExists:
+    #         raise HTTPException(
+    #             status.HTTP_400_BAD_REQUEST,
+    #             detail=ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS,
+    #         )
+    #
+    # @router.delete(
+    #     "/{id}",
+    #     status_code=status.HTTP_204_NO_CONTENT,
+    #     response_class=Response,
+    #     dependencies=[Depends(get_current_superuser)],
+    #     name="users:delete_user",
+    #     responses={
+    #         status.HTTP_401_UNAUTHORIZED: {
+    #             "description": "Missing token or inactive user.",
+    #         },
+    #         status.HTTP_403_FORBIDDEN: {
+    #             "description": "Not a superuser.",
+    #         },
+    #         status.HTTP_404_NOT_FOUND: {
+    #             "description": "The user does not exist.",
+    #         },
+    #     },
+    # )
+    # async def delete_user(
+    #     request: Request,
+    #     user=Depends(get_user_or_404),
+    #     user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager),
+    # ):
+    #     await user_manager.delete(user, request=request)
+    #     return None
 
     return router

@@ -16,6 +16,8 @@ fastapi-users = {extras = ["sqlalchemy"], version = "^12.1.2"}
 aiosqlite = "^0.19.0"
 fastapi-mail = "^1.4.1"
 pillow = "^10.2.0"
+fastapi-pagination = "^0.12.17"
+fastapi-filter = "^1.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
