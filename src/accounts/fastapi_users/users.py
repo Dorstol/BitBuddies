@@ -130,7 +130,7 @@ def get_users_router(
                 detail=ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS,
             )
 
-    @router.patch(
+    @router.post(
         "/me/upload_photo",
         name="users:upload_photo",
     )

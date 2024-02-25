@@ -10,7 +10,7 @@ from src.accounts.models import Position
 class UserRead(BaseUser[int]):
     """Base User model."""
 
-    id: models.ID = Field(exclude=True)
+    id: models.ID
     first_name: str
     last_name: str
     email: EmailStr

@@ -10,11 +10,9 @@ from src.teams.router import router as teams_router
 
 app = FastAPI(title="BitBuddies")
 
-origins = ["*"]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
