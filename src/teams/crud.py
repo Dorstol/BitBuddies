@@ -32,7 +32,7 @@ async def create_team(
     for team in teams:
         if team.owner_id == user_id and team.status != "Ready":
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="CAN`T_CREATE_TEAM"
+                status_code=status.HTTP_403_FORBIDDEN, detail="CANNOT_CREATE_TEAM"
             )
     team = Team(
         title=team_in.title,
