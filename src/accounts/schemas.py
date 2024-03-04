@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi_users import models
 from fastapi_users.schemas import CreateUpdateDictModel, BaseUser
-from pydantic import EmailStr, Field
+from pydantic import EmailStr, Field, BaseModel
 
 from src.accounts.models import Position
 
@@ -33,6 +33,11 @@ class UserUpdate(CreateUpdateDictModel):
     password: Optional[str] = None
     position: Optional[Position] = None
     contact: Optional[str] = None
+
+
+class UserPasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str
 
 
 class User(UserRead):

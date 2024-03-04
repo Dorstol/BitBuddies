@@ -8,6 +8,7 @@ class TeamBase(BaseModel):
     title: str
     project_name: str
     description: str
+    owner_id: int
     status: StatusChoices
     members: list[UserRead]
 
@@ -16,8 +17,6 @@ class TeamCreate(BaseModel):
     title: str
     project_name: str
     description: str
-    status: StatusChoices
-    user_id: int
 
 
 class TeamUpdate(TeamCreate):

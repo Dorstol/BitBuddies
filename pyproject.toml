@@ -18,6 +18,7 @@ fastapi-mail = "^1.4.1"
 pillow = "^10.2.0"
 fastapi-pagination = "^0.12.17"
 fastapi-filter = "^1.1.0"
+bcrypt = "4.0.1"
 
 
 [tool.poetry.group.dev.dependencies]

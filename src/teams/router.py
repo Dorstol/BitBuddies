@@ -39,18 +39,15 @@ async def get_team(team: Team = Depends(team_by_id)):
     "/",
     response_model=Team,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[
-        Depends(current_active_verified_user),
-    ],
 )
 async def create_team(
     team_in: TeamCreate,
-    user_id: int,
+    user: User = Depends(current_active_verified_user),
     session: AsyncSession = Depends(get_async_session),
 ):
     return await crud.create_team(
         team_in=team_in,
-        user_id=user_id,
+        user_id=user.id,
         session=session,
     )
 
@@ -59,20 +56,16 @@ async def create_team(
     "/{team_id}/",
     response_model=Team,
     status_code=status.HTTP_200_OK,
-    dependencies=[
-        Depends(current_active_verified_user),
-        Depends(team_by_id),
-    ],
 )
 async def update_team_partial(
-    user: User,
-    team: Team,
     team_update: TeamUpdatePartial,
+    team: Team = Depends(team_by_id),
+    user: User = Depends(current_active_verified_user),
     session: AsyncSession = Depends(get_async_session),
 ):
     return await crud.update_team(
         session=session,
-        user=user,
+        user_id=user.id,
         team=team,
         team_update=team_update,
     )
@@ -81,14 +74,10 @@ async def update_team_partial(
 @router.delete(
     "/{team_id}/",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[
-        Depends(current_active_verified_user),
-        Depends(team_by_id),
-    ],
 )
 async def delete_team(
-    user: User,
-    team: Team,
+    user: User = Depends(current_active_verified_user),
+    team: Team = Depends(team_by_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> None:
     await crud.delete_team(
@@ -101,14 +90,10 @@ async def delete_team(
 @router.post(
     "/join/{team_id}/",
     status_code=status.HTTP_200_OK,
-    dependencies=[
-        Depends(current_active_verified_user),
-        Depends(team_by_id),
-    ],
 )
 async def join_team(
-    user: User,
-    team: Team,
+    user: User = Depends(current_active_verified_user),
+    team: Team = Depends(team_by_id),
     session: AsyncSession = Depends(get_async_session),
 ):
     return await crud.join_team(
@@ -121,14 +106,10 @@ async def join_team(
 @router.delete(
     "/leave/{team_id}/",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[
-        Depends(current_active_verified_user),
-        Depends(team_by_id),
-    ],
 )
 async def leave_team(
-    user: User,
-    team: Team,
+    user: User = Depends(current_active_verified_user),
+    team: Team = Depends(team_by_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> None:
     await crud.leave_team(

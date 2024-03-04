@@ -3,6 +3,7 @@ from sqlalchemy import select, Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from src.accounts.crud import get_user_teams
 from src.accounts.models import User
 from src.teams.models import Team, UserTeam
 from src.teams.schemas import TeamCreate, TeamUpdatePartial
@@ -27,11 +28,18 @@ async def create_team(
     user_id: int,
     session: AsyncSession,
 ) -> Team:
+    teams = await get_user_teams(user_id=user_id, session=session)
+    for team in teams:
+        if team.owner_id == user_id and team.status != "Ready":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="CAN`T_CREATE_TEAM"
+            )
     team = Team(
         title=team_in.title,
         project_name=team_in.project_name,
         description=team_in.description,
     )
+    team.owner_id = user_id
     session.add(team)
     await session.flush()
     user_team = UserTeam(user_id=user_id, team_id=team.id)
@@ -68,7 +76,11 @@ async def join_team(
 ):
     if len(team.members) == team.MAX_TEAM_MEMBERS:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Max team members!"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="MAX_MEMBERS"
+        )
+    if user in team.members:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="ALREADY_IN_TEAM"
         )
     user_team = UserTeam(user_id=user.id, team_id=team.id)
     session.add(user_team)
@@ -82,5 +94,12 @@ async def leave_team(
     session: AsyncSession,
 ) -> None:
     if user and team:
-        team.members.remove(user)
+        # if user.id == team.owner_id:
+        #     await delete_team(session=session, team=team, user=user)
+        if user in team.members:
+            team.members.remove(user)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="NOT_TEAM_MEMBER"
+            )
     await session.commit()

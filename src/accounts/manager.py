@@ -9,6 +9,8 @@ from fastapi_users import (
     exceptions,
 )
 from fastapi_users.jwt import generate_jwt
+from fastapi_users.password import PasswordHelper
+from passlib.context import CryptContext
 from starlette.responses import JSONResponse
 
 from src.accounts.config import auth_backend
@@ -18,6 +20,9 @@ from src.config import conf
 from src.database import get_user_db
 
 SECRET = "SECRET"
+
+context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+password_helper = PasswordHelper(context)
 
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
@@ -89,7 +94,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):
-    yield UserManager(user_db)
+    yield UserManager(user_db, password_helper)
 
 
 fastapi_users = CustomFastAPIUsers[User, int](

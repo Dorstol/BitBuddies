@@ -21,8 +21,9 @@ from fastapi_users.router.common import ErrorCode, ErrorModel
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.accounts.crud import get_user_teams
 from src.accounts.models import User, Position
-from src.accounts.schemas import UserRead
+from src.accounts.schemas import UserRead, UserPasswordUpdate
 from src.config import BASE_DIR
 from src.database import get_async_session
 
@@ -40,19 +41,6 @@ def get_users_router(
     get_current_active_user = authenticator.current_user(
         active=True, verified=requires_verification
     )
-    get_current_superuser = authenticator.current_user(
-        active=True, verified=requires_verification, superuser=True
-    )
-
-    async def get_user_or_404(
-        id: str,
-        user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager),
-    ) -> models.UP:
-        try:
-            parsed_id = user_manager.parse_id(id)
-            return await user_manager.get(parsed_id)
-        except (exceptions.UserNotExists, exceptions.InvalidID) as e:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from e
 
     @router.get(
         "/me",
@@ -68,6 +56,46 @@ def get_users_router(
         user: models.UP = Depends(get_current_active_user),
     ):
         return schemas.model_validate(user_schema, user)
+
+    @router.get(
+        "/all",
+        name="get_users",
+        response_model=Page[UserRead],
+        dependencies=[Depends(get_current_active_user)],
+    )
+    async def get_users(
+        full_name: str = Query(None, description="Filter users by full name"),
+        email: str = Query(None, description="Filter users by email"),
+        position: Position = Query(None, description="Filter users by position"),
+        session: AsyncSession = Depends(get_async_session),
+    ) -> Page[UserRead]:
+        query = select(User)
+        if full_name:
+            parts = full_name.split()
+            if len(parts) == 2:
+                first_name, last_name = parts
+                if first_name:
+                    query = query.filter(User.first_name.contains(first_name))
+                if last_name:
+                    query = query.filter(User.last_name.contains(last_name))
+            elif len(parts) == 1:
+                name = parts[0]
+                query = query.filter(
+                    or_(User.first_name.contains(name), User.last_name.contains(name))
+                )
+        if email:
+            query = query.filter(User.email.contains(email))
+        if position:
+            query = query.filter(User.position.contains(position))
+
+        return await paginate(session, query)
+
+    @router.get("/me/teams")
+    async def get_me_teams(
+        user: User = Depends(get_current_active_user),
+        session: AsyncSession = Depends(get_async_session),
+    ):
+        return await get_user_teams(user_id=user.id, session=session)
 
     @router.patch(
         "/me",
@@ -131,12 +159,37 @@ def get_users_router(
             )
 
     @router.post(
+        "/me/update_password",
+        name="users:update_password",
+        dependencies=[Depends(get_current_active_user)],
+    )
+    async def update_user_password(
+        user_schema: UserPasswordUpdate,
+        user: models.UP = Depends(get_current_active_user),
+        session: AsyncSession = Depends(get_async_session),
+        user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager),
+    ):
+        password_helper = user_manager.password_helper
+
+        if user_schema.current_password:
+            current_hashed_password = password_helper.hash(user_schema.current_password)
+
+            if current_hashed_password == user.hashed_password:
+                new_hashed_password = password_helper.hash(
+                    password=user_schema.new_password
+                )
+                user.hashed_password = new_hashed_password
+                await session.commit()
+
+            return {"detail": "Please provide your current password"}
+
+    @router.post(
         "/me/upload_photo",
         name="users:upload_photo",
     )
     async def upload_user_photo(
         file: UploadFile = File(...),
-        user: models.UP = Depends(get_current_active_user),
+        user: User = Depends(get_current_active_user),
         session: AsyncSession = Depends(get_async_session),
     ):
         if file.size >= 1000000:
@@ -162,39 +215,7 @@ def get_users_router(
         user.photo = token_name
         session.add(user)
         await session.commit()
-
-    @router.get(
-        "/all",
-        name="get_users",
-        response_model=Page[UserRead],
-        dependencies=[Depends(get_current_active_user)],
-    )
-    async def get_users(
-        full_name: str = Query(None, description="Filter users by full name"),
-        email: str = Query(None, description="Filter users by email"),
-        position: Position = Query(None, description="Filter users by position"),
-        session: AsyncSession = Depends(get_async_session),
-    ) -> Page[UserRead]:
-        query = select(User)
-        if full_name:
-            parts = full_name.split()
-            if len(parts) == 2:
-                first_name, last_name = parts
-                if first_name:
-                    query = query.filter(User.first_name.contains(first_name))
-                if last_name:
-                    query = query.filter(User.last_name.contains(last_name))
-            elif len(parts) == 1:
-                name = parts[0]
-                query = query.filter(
-                    or_(User.first_name.contains(name), User.last_name.contains(name))
-                )
-        if email:
-            query = query.filter(User.email.contains(email))
-        if position:
-            query = query.filter(User.position.contains(position))
-
-        return await paginate(session, query)
+        return schemas.model_validate(UserRead, user)
 
     # @router.get(
     #     "/{id}",

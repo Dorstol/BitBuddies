@@ -26,6 +26,7 @@ class Team(Base):
         nullable=False,
         index=True,
     )
+    owner_id: Mapped[int]
     project_name: Mapped[str] = mapped_column(String(length=256))
     description: Mapped[str] = mapped_column(Text())
     status: Mapped[StatusChoices] = mapped_column(
