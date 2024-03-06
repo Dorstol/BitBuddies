@@ -7,6 +7,7 @@ from src.models import Base
 
 
 class StatusChoices(str, Enum):
+    DEFAULT = ""
     INITIATION = "Initiation"
     PLANNING = "Planning"
     DESIGN = "Design"
