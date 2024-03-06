@@ -28,7 +28,6 @@ class TeamUpdatePartial(TeamCreate):
     project_name: str | None = None
     description: str | None = None
     status: StatusChoices | None = None
-    members: list[UserRead] | None = None
 
 
 class Team(TeamBase):

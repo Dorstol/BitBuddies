@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select, Result
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -27,11 +28,17 @@ async def get_teams(
     return await paginate(session, query)
 
 
-async def get_team(session: AsyncSession, team_id: int) -> Team | None:
-    stmt = select(Team).where(Team.id == team_id).options(joinedload(Team.members))
-    result: Result = await session.execute(stmt)
-    team = result.unique().scalar_one()
-    return team
+async def get_team(session: AsyncSession, team_id: int):
+    try:
+        stmt = select(Team).where(Team.id == team_id).options(joinedload(Team.members))
+        result: Result = await session.execute(stmt)
+        team = result.unique().scalar_one()
+        return team
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="DOES_NOT_EXIST",
+        )
 
 
 async def create_team(
@@ -65,10 +72,13 @@ async def update_team(
     user_id: int,
     team_update: TeamUpdatePartial,
 ):
-    for name, value in team_update.model_dump(exclude_unset=True).items():
-        setattr(team, name, value)
-    await session.commit()
-    return team
+    if team.owner_id == user_id:
+        for name, value in team_update.model_dump(exclude_unset=True).items():
+            setattr(team, name, value)
+        await session.commit()
+        return team
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="NOT_OWNER")
 
 
 async def delete_team(
