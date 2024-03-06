@@ -14,7 +14,7 @@ async def get_teams(
     session: AsyncSession,
     title: str,
     project_name: str,
-    status: StatusChoices = "",
+    status: StatusChoices = None,
 ):
     query = select(Team).options(joinedload(Team.members))
     if title:
