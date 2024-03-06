@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
+from fastapi_pagination import Page
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.accounts.manager import fastapi_users
@@ -6,6 +7,7 @@ from src.accounts.schemas import User
 from src.database import get_async_session
 from src.teams import crud
 from src.teams.dependencies import team_by_id
+from src.teams.models import StatusChoices
 from src.teams.schemas import Team, TeamCreate, TeamUpdatePartial
 
 router = APIRouter()
@@ -15,13 +17,20 @@ current_active_verified_user = fastapi_users.current_user()
 
 @router.get(
     "/",
-    response_model=list[Team],
+    response_model=Page[Team],
     dependencies=[
         Depends(current_active_verified_user),
     ],
 )
-async def get_teams(session: AsyncSession = Depends(get_async_session)):
-    return await crud.get_teams(session=session)
+async def get_teams(
+    title: str = Query(None, description="filter teams by title"),
+    project_name: str = Query(None, description="filter teams by project name."),
+    status: StatusChoices = Query(None, description="filter teams by status"),
+    session: AsyncSession = Depends(get_async_session),
+):
+    return await crud.get_teams(
+        title=title, project_name=project_name, status=status, session=session
+    )
 
 
 @router.get(

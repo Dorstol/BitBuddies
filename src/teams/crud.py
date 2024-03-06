@@ -1,19 +1,30 @@
 from fastapi import HTTPException, status
+from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select, Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from src.accounts.crud import get_user_teams
 from src.accounts.models import User
-from src.teams.models import Team, UserTeam
+from src.teams.models import Team, UserTeam, StatusChoices
 from src.teams.schemas import TeamCreate, TeamUpdatePartial
 
 
-async def get_teams(session: AsyncSession) -> list[Team]:
-    stmt = select(Team).options(joinedload(Team.members))
-    result: Result = await session.execute(stmt)
-    teams = result.unique().scalars().all()
-    return list(teams)
+async def get_teams(
+    session: AsyncSession,
+    title: str,
+    project_name: str,
+    status: StatusChoices,
+):
+    query = select(Team).options(joinedload(Team.members))
+    if title:
+        query = query.filter(Team.title.contains(title))
+    if project_name:
+        query = query.filter(Team.project_name.contains(project_name))
+    if status:
+        query = query.filter(Team.status.contains(status))
+
+    return await paginate(session, query)
 
 
 async def get_team(session: AsyncSession, team_id: int) -> Team | None:

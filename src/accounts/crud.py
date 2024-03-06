@@ -22,5 +22,4 @@ async def get_user_teams(user_id: int, session: AsyncSession):
     stmt = select(Team).join(UserTeam).where(UserTeam.user_id == user_id)
     result = await session.execute(stmt)
     teams = result.scalars().all()
-    print(teams)
     return teams
