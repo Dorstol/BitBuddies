@@ -16,7 +16,7 @@ current_active_verified_user = fastapi_users.current_user()
 
 
 @router.get(
-    "/",
+    "",
     response_model=Page[Team],
     dependencies=[
         Depends(current_active_verified_user),
@@ -34,7 +34,7 @@ async def get_teams(
 
 
 @router.get(
-    "/{team_id}/",
+    "/{team_id}",
     response_model=Team,
     dependencies=[
         Depends(current_active_verified_user),
@@ -45,7 +45,7 @@ async def get_team(team: Team = Depends(team_by_id)):
 
 
 @router.post(
-    "/",
+    "",
     response_model=Team,
     status_code=status.HTTP_201_CREATED,
 )
@@ -62,7 +62,7 @@ async def create_team(
 
 
 @router.patch(
-    "/{team_id}/",
+    "/{team_id}",
     response_model=Team,
     status_code=status.HTTP_200_OK,
 )
@@ -81,7 +81,7 @@ async def update_team_partial(
 
 
 @router.delete(
-    "/{team_id}/",
+    "/{team_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_team(
@@ -89,7 +89,7 @@ async def delete_team(
     team: Team = Depends(team_by_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> None:
-    await crud.delete_team(
+    return await crud.delete_team(
         session=session,
         team=team,
         user=user,
@@ -97,8 +97,9 @@ async def delete_team(
 
 
 @router.post(
-    "/join/{team_id}/",
+    "/join/{team_id}",
     status_code=status.HTTP_200_OK,
+    response_model=Team,
 )
 async def join_team(
     user: User = Depends(current_active_verified_user),
@@ -113,15 +114,16 @@ async def join_team(
 
 
 @router.delete(
-    "/leave/{team_id}/",
-    status_code=status.HTTP_204_NO_CONTENT,
+    "/leave/{team_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=Team,
 )
 async def leave_team(
     user: User = Depends(current_active_verified_user),
     team: Team = Depends(team_by_id),
     session: AsyncSession = Depends(get_async_session),
-) -> None:
-    await crud.leave_team(
+):
+    return await crud.leave_team(
         user=user,
         team=team,
         session=session,

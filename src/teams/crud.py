@@ -50,7 +50,8 @@ async def create_team(
     for team in teams:
         if team.owner_id == user_id and team.status != "Ready":
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="CANNOT_CREATE_TEAM"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="CANNOT_CREATE_TEAM",
             )
     team = Team(
         title=team_in.title,
@@ -78,7 +79,10 @@ async def update_team(
         await session.commit()
         return team
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="NOT_OWNER")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="NOT_OWNER",
+        )
 
 
 async def delete_team(
@@ -86,8 +90,14 @@ async def delete_team(
     team: Team,
     user: User,
 ) -> None:
-    await session.delete(team)
-    await session.commit()
+    if team.owner_id == user.id:
+        await session.delete(team)
+        await session.commit()
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="NOT_OWNER",
+        )
 
 
 async def join_team(
@@ -97,30 +107,37 @@ async def join_team(
 ):
     if len(team.members) == team.MAX_TEAM_MEMBERS:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="MAX_MEMBERS"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MAX_MEMBERS",
         )
     if user in team.members:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="ALREADY_IN_TEAM"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="ALREADY_IN_TEAM",
         )
     user_team = UserTeam(user_id=user.id, team_id=team.id)
     session.add(user_team)
     await session.commit()
-    return user_team
+    return await get_team(session=session, team_id=team.id)
 
 
 async def leave_team(
     team: Team,
     user: User,
     session: AsyncSession,
-) -> None:
+):
     if user and team:
-        # if user.id == team.owner_id:
-        #     await delete_team(session=session, team=team, user=user)
+        if team.owner_id == user.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="OWNER_CANNOT_LEAVE",
+            )
         if user in team.members:
             team.members.remove(user)
+            await session.commit()
+            return await get_team(session=session, team_id=team.id)
         else:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="NOT_TEAM_MEMBER"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="NOT_TEAM_MEMBER",
             )
-    await session.commit()

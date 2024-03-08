@@ -26,6 +26,8 @@ from src.accounts.models import User, Position
 from src.accounts.schemas import UserRead, UserPasswordUpdate
 from src.config import BASE_DIR
 from src.database import get_async_session
+from src.teams.models import StatusChoices
+from src.teams.schemas import Team
 
 
 def get_users_router(
@@ -90,12 +92,24 @@ def get_users_router(
 
         return await paginate(session, query)
 
-    @router.get("/me/teams")
+    @router.get(
+        "/me/teams",
+        response_model=Page[Team],
+    )
     async def get_me_teams(
         user: User = Depends(get_current_active_user),
         session: AsyncSession = Depends(get_async_session),
+        title: str = Query(None, description="filter teams by title"),
+        project_name: str = Query(None, description="filter teams by project name."),
+        status: StatusChoices = Query(None, description="filter teams by status"),
     ):
-        return await get_user_teams(user_id=user.id, session=session)
+        return await get_user_teams(
+            title=title,
+            project_name=project_name,
+            status=status,
+            user_id=user.id,
+            session=session,
+        )
 
     @router.patch(
         "/me",
