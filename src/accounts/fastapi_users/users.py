@@ -22,6 +22,7 @@ from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.accounts.crud import get_user_teams
+from src.accounts.dependencies import get_user_by_id
 from src.accounts.models import User, Position
 from src.accounts.schemas import UserRead, UserPasswordUpdate
 from src.config import BASE_DIR
@@ -173,6 +174,20 @@ def get_users_router(
                 detail=ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS,
             )
 
+    @router.delete(
+        "/me",
+        status_code=status.HTTP_204_NO_CONTENT,
+    )
+    async def delete_user(
+        session: AsyncSession = Depends(get_async_session),
+        user: User = Depends(get_current_active_user),
+    ):
+        if user:
+            await session.delete(user)
+            await session.commit()
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
     @router.post(
         "/me/update_password",
         name="users:update_password",
@@ -232,26 +247,15 @@ def get_users_router(
         await session.commit()
         return schemas.model_validate(UserRead, user)
 
-    # @router.get(
-    #     "/{id}",
-    #     response_model=user_schema,
-    #     dependencies=[Depends(get_current_superuser)],
-    #     name="users:user",
-    #     responses={
-    #         status.HTTP_401_UNAUTHORIZED: {
-    #             "description": "Missing token or inactive user.",
-    #         },
-    #         status.HTTP_403_FORBIDDEN: {
-    #             "description": "Not a superuser.",
-    #         },
-    #         status.HTTP_404_NOT_FOUND: {
-    #             "description": "The user does not exist.",
-    #         },
-    #     },
-    # )
-    # async def get_user(user=Depends(get_user_or_404)):
-    #     return schemas.model_validate(user_schema, user)
-    #
+    @router.get(
+        "/{user_id}",
+        response_model=UserRead,
+        name="users:user",
+        dependencies=[Depends(get_current_active_user)],
+    )
+    async def get_user(user_id: User = Depends(get_user_by_id)):
+        return schemas.model_validate(UserRead, user_id)
+
     # @router.patch(
     #     "/{id}",
     #     response_model=user_schema,

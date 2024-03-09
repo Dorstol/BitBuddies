@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status, Query
 from fastapi_pagination import Page
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.accounts.dependencies import get_user_by_id
 from src.accounts.manager import fastapi_users
 from src.accounts.schemas import User
 from src.database import get_async_session
@@ -127,5 +128,26 @@ async def leave_team(
     return await crud.leave_team(
         user=user,
         team=team,
+        session=session,
+    )
+
+
+@router.delete(
+    "/remove_member/{team_id}/{user_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=Team,
+)
+async def remove_member_by_owner(
+    team_id: int,
+    user_id: int,
+    owner: User = Depends(current_active_verified_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    user = await get_user_by_id(user_id=user_id, session=session)
+    team = await team_by_id(team_id=team_id, session=session)
+    return await crud.remove_member(
+        member=user,
+        team=team,
+        owner=owner,
         session=session,
     )

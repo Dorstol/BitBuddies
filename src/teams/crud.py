@@ -143,3 +143,31 @@ async def leave_team(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="NOT_TEAM_MEMBER",
             )
+
+
+async def remove_member(
+    member: User,
+    team: Team,
+    owner: User,
+    session: AsyncSession,
+):
+    try:
+        if None not in (member, team, owner):
+            if team.owner_id == member.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="OWNER_CANNOT_LEAVE",
+                )
+            if team.owner_id == owner.id:
+                team.members.remove(member)
+                await session.commit()
+                return await get_team(session=session, team_id=team.id)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="NOT_OWNER",
+                )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="BAD_REQUEST"
+        )

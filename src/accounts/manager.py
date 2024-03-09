@@ -1,5 +1,4 @@
 from typing import Optional
-
 from fastapi import Depends, Request, HTTPException
 from fastapi_mail import MessageSchema, MessageType, FastMail
 from fastapi_users import (
