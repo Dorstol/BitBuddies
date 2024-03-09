@@ -20,24 +20,25 @@ async def get_user_by_email(user_email: str, session: AsyncSession):
 
 
 async def get_user_teams(
+    is_paginate: bool,
     user_id: int,
     session: AsyncSession,
     title: str = None,
     project_name: str = None,
     status: StatusChoices = None,
-    is_paginate: bool = False,
 ):
-    stmt = select(Team).join(UserTeam).where(UserTeam.user_id == user_id)
+    query = select(Team).join(UserTeam).where(UserTeam.user_id == user_id)
 
     if is_paginate:
         if title:
-            stmt = stmt.filter(Team.title.contains(title))
+            query = query.filter(Team.title.contains(title))
         if project_name:
-            stmt = stmt.filter(Team.project_name.contains(project_name))
+            query = query.filter(Team.project_name.contains(project_name))
         if status:
-            stmt = stmt.filter(Team.status.contains(status))
-        return await paginate(session, stmt)
+            query = query.filter(Team.status.contains(status))
 
-    result = await session.execute(stmt)
-    teams = result.scalars().all()
-    return teams
+        return await paginate(session, query)
+    else:
+        result = await session.execute(query)
+        teams = result.scalars().all()
+        return teams

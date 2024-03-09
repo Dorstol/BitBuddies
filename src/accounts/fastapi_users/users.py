@@ -104,6 +104,7 @@ def get_users_router(
         status: StatusChoices = Query(None, description="filter teams by status"),
     ):
         return await get_user_teams(
+            is_paginate=True,
             title=title,
             project_name=project_name,
             status=status,

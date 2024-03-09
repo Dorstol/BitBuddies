@@ -83,12 +83,13 @@ async def update_team_partial(
 @router.delete(
     "/{team_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
 )
 async def delete_team(
     user: User = Depends(current_active_verified_user),
     team: Team = Depends(team_by_id),
     session: AsyncSession = Depends(get_async_session),
-) -> None:
+):
     return await crud.delete_team(
         session=session,
         team=team,

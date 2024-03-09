@@ -3,9 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi_pagination import add_pagination
 
-from src.config import BASE_DIR
-
 from src.accounts.router import router as accounts_router
+from src.config import BASE_DIR
 from src.teams.router import router as teams_router
 
 app = FastAPI(title="BitBuddies")
@@ -29,4 +28,5 @@ app.include_router(
 
 
 app.mount("/static", StaticFiles(directory=f"{BASE_DIR}/static"), name="static")
+
 add_pagination(app)

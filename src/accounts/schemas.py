@@ -23,6 +23,8 @@ class UserRead(BaseUser[int]):
 
 
 class UserCreate(CreateUpdateDictModel):
+    first_name: str
+    last_name: str
     email: EmailStr
     password: str
 

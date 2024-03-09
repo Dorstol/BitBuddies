@@ -28,11 +28,13 @@ async def get_teams(
     return await paginate(session, query)
 
 
-async def get_team(session: AsyncSession, team_id: int):
+async def get_team(session: AsyncSession, team_id: int, join: bool = None):
     try:
         stmt = select(Team).where(Team.id == team_id).options(joinedload(Team.members))
         result: Result = await session.execute(stmt)
         team = result.unique().scalar_one()
+        if join:
+            await session.refresh(team)
         return team
     except NoResultFound:
         raise HTTPException(
@@ -45,8 +47,8 @@ async def create_team(
     team_in: TeamCreate,
     user_id: int,
     session: AsyncSession,
-) -> Team:
-    teams = await get_user_teams(user_id=user_id, session=session)
+):
+    teams = await get_user_teams(user_id=user_id, session=session, is_paginate=False)
     for team in teams:
         if team.owner_id == user_id and team.status != "Ready":
             raise HTTPException(
@@ -89,7 +91,7 @@ async def delete_team(
     session: AsyncSession,
     team: Team,
     user: User,
-) -> None:
+):
     if team.owner_id == user.id:
         await session.delete(team)
         await session.commit()
@@ -118,7 +120,7 @@ async def join_team(
     user_team = UserTeam(user_id=user.id, team_id=team.id)
     session.add(user_team)
     await session.commit()
-    return await get_team(session=session, team_id=team.id)
+    return await get_team(session=session, team_id=team.id, join=True)
 
 
 async def leave_team(
