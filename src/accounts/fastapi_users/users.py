@@ -174,6 +174,29 @@ def get_users_router(
                 detail=ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS,
             )
 
+    @router.post(
+        "/me/change_password",
+        status_code=status.HTTP_200_OK,
+        dependencies=[Depends(get_current_active_user)],
+    )
+    async def change_password(
+        user_schema: UserPasswordUpdate,
+        user: models.UP = Depends(get_current_active_user),
+        user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager),
+        session: AsyncSession = Depends(get_async_session),
+    ):
+        if user_manager.password_helper.verify_and_update(
+            user_schema.current_password, user.hashed_password
+        ):
+            new_user_pass = user_manager.password_helper.hash(
+                password=user_schema.new_password
+            )
+            user.hashed_password = new_user_pass
+            session.add(user)
+            await session.commit()
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
     @router.delete(
         "/me",
         status_code=status.HTTP_204_NO_CONTENT,
@@ -187,31 +210,6 @@ def get_users_router(
             await session.commit()
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-
-    @router.post(
-        "/me/update_password",
-        name="users:update_password",
-        dependencies=[Depends(get_current_active_user)],
-    )
-    async def update_user_password(
-        user_schema: UserPasswordUpdate,
-        user: models.UP = Depends(get_current_active_user),
-        session: AsyncSession = Depends(get_async_session),
-        user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager),
-    ):
-        password_helper = user_manager.password_helper
-
-        if user_schema.current_password:
-            current_hashed_password = password_helper.hash(user_schema.current_password)
-
-            if current_hashed_password == user.hashed_password:
-                new_hashed_password = password_helper.hash(
-                    password=user_schema.new_password
-                )
-                user.hashed_password = new_hashed_password
-                await session.commit()
-
-            return {"detail": "Please provide your current password"}
 
     @router.post(
         "/me/upload_photo",

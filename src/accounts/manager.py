@@ -12,7 +12,6 @@ from fastapi_users import (
 from fastapi_users.jwt import generate_jwt
 from fastapi_users.password import PasswordHelper
 from passlib.context import CryptContext
-from starlette.responses import JSONResponse
 
 from src.accounts.config import auth_backend
 from src.accounts.fastapi_users.fastapi_users import CustomFastAPIUsers
