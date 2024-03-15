@@ -1,3 +1,3 @@
-__all__ = ("accounts", "teams")
+__all__ = ("accounts", "teams", "main")
 
-from src import teams, accounts
+from src import teams, accounts, main
