@@ -123,22 +123,19 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         )
 
     async def forgot_password(
-        self, user: models.UP, request: Optional[Request] = None
-    ) -> None:
-        """
-        Start a forgot password request.
-
-        Triggers the on_after_forgot_password handler on success.
-
-        :param user: The user that forgot its password.
-        :param request: Optional FastAPI request that
-        triggered the operation, defaults to None.
-        :raises UserInactive: The user is inactive.
-        """
+        self,
+        user: models.UP,
+        request: Optional[Request] = None,
+    ):
+        if not user:
+            raise HTTPException(status_code=404, detail="USER_DOES_NOT_EXIST")
         if not user.is_active:
             raise exceptions.UserInactive()
 
-        await self.generate_data_message(request=request, user=user)
+        return await self.generate_data_message(
+            request=request,
+            user=user,
+        )
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):

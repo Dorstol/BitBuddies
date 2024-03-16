@@ -18,6 +18,7 @@ async def test_register(ac: AsyncClient):
         json=test_user,
     )
     assert response.status_code == 201
+    assert response.json() is None
 
 
 async def test_user_already_exist(ac: AsyncClient):
@@ -60,3 +61,57 @@ async def test_user_login(ac: AsyncClient):
     )
     assert response.status_code == 200
     assert response.json() != {}
+    assert response.json()["token_type"] == "bearer"
+
+
+async def test_user_logout_failed(ac: AsyncClient):
+    response = await ac.post("/auth/jwt/logout")
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Unauthorized"}
+
+
+async def test_request_forgot_password(ac: AsyncClient):
+    response = await ac.post(
+        "/auth/forgot-password",
+        json={"email": test_user["email"]},
+    )
+    assert response.status_code == 202
+    assert response.json() is None
+
+
+async def test_request_forgot_password_failed(ac: AsyncClient):
+    response = await ac.post(
+        "/auth/forgot-password",
+        json={},
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["input"] is None
+
+
+async def test_request_verify_token(ac: AsyncClient):
+    response = await ac.post(
+        "/auth/request-verify-token",
+        json={"email": test_user["email"]},
+    )
+    assert response.status_code == 202
+    assert response.json() in None
+
+
+async def test_request_verify_token_failed(ac: AsyncClient):
+    response = await ac.post(
+        "/auth/request-verify-token",
+        json={
+            "email": "not_existed_user@gmail.com",
+        },
+    )
+    assert response.status_code == 404
+    assert response.json() == {"detail": "USER_DOES_NOT_EXIST"}
+
+    response = await ac.post(
+        "/auth/request-verify-token",
+        json={
+            "email": "not_existed_user@gmail.com",
+        },
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["input"] is None
