@@ -38,6 +38,15 @@ async def test_register_failed(ac: AsyncClient):
     assert response.status_code == 422
 
 
+async def test_request_verify_token(ac: AsyncClient):
+    response = await ac.post(
+        "/auth/request-verify-token",
+        json={"email": test_user["email"]},
+    )
+    assert response.status_code == 202
+    assert response.json() is None
+
+
 async def test_make_user_verified():
     async with async_session_maker() as session:
         stmt = select(User).where(User.id == 1)
@@ -88,13 +97,13 @@ async def test_request_forgot_password_failed(ac: AsyncClient):
     assert response.json()["detail"][0]["input"] is None
 
 
-async def test_request_verify_token(ac: AsyncClient):
+async def test_request_verify_token_verified_user(ac: AsyncClient):
     response = await ac.post(
         "/auth/request-verify-token",
         json={"email": test_user["email"]},
     )
-    assert response.status_code == 202
-    assert response.json() in None
+    assert response.status_code == 400
+    assert response.json() == {"detail": "VERIFY_USER_ALREADY_VERIFIED"}
 
 
 async def test_request_verify_token_failed(ac: AsyncClient):
@@ -109,9 +118,7 @@ async def test_request_verify_token_failed(ac: AsyncClient):
 
     response = await ac.post(
         "/auth/request-verify-token",
-        json={
-            "email": "not_existed_user@gmail.com",
-        },
+        json={},
     )
     assert response.status_code == 422
     assert response.json()["detail"][0]["input"] is None
